@@ -10,7 +10,9 @@ interface OrderRepository {
     fun save(order: Order)
 
     fun findById(id: UUID): Order?
+    fun findOrderItems(orderId: UUID): List<OrderItemQuery>
+    fun findWithoutItemsById(id: UUID): OrderWithoutItems?
     fun findAll(): List<Order>
-    fun update(order: Order)
+    fun update(order: OrderWithoutItems)
     fun delete(id: UUID)
 }

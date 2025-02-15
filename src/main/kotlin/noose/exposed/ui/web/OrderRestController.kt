@@ -1,6 +1,7 @@
 package noose.exposed.ui.web
 
 import noose.exposed.core.order.application.OrderService
+import noose.exposed.core.order.domain.OrderItemQuery
 import noose.exposed.core.order.domain.OrderModifyCommand
 import noose.exposed.core.order.domain.OrderStatus
 import org.springframework.http.ResponseEntity
@@ -45,15 +46,21 @@ class OrderRestController(
         return OrderDetailResponse.from(order)
     }
 
+    @GetMapping("/api/orders/{orderId}/items")
+    fun getOrderItems(
+        @PathVariable orderId: UUID,
+    ): List<OrderItemQuery> {
+        return service.itemsById(orderId)
+    }
+
     @PutMapping("/api/orders/{orderId}")
     fun modifyOrder(
         @PathVariable orderId: UUID,
     ) {
         val command = OrderModifyCommand(
-            price = 100_000,
             status = OrderStatus.DELIVERED,
         )
-        service.modify(orderId, command)
+        service.change(orderId, command)
     }
 
     @DeleteMapping("/api/orders/{orderId}")

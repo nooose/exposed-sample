@@ -1,6 +1,7 @@
 package noose.exposed.data
 
 import noose.exposed.core.order.domain.Order
+import noose.exposed.core.order.domain.OrderWithoutItems
 import org.jetbrains.exposed.dao.UUIDEntity
 import org.jetbrains.exposed.dao.UUIDEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -10,23 +11,32 @@ class OrderEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     companion object : UUIDEntityClass<OrderEntity>(Orders)
 
     var customerId by Orders.customerId
-    var price by Orders.price
     var status by Orders.status
+    val items by OrderItemEntity referrersOn OrderItems.orderId
     var createdAt by Orders.createdAt
-    var modifiedAt by Orders.createdAt
+    var modifiedAt by Orders.modifiedAt
 
-    fun update(that: Order) {
+    fun update(that: OrderWithoutItems) {
         this.customerId = that.customerId
-        this.price = that.price
         this.status = that.status
         this.modifiedAt = that.modifiedAt
     }
 
+    // N+1 문제 발생
     fun toOrder() = Order(
         customerId = customerId,
-        price = price,
+        id = id.value,
+        status = status,
+        items = items.map { it.toOrderItem() },
+        createdAt = createdAt,
+        modifiedAt = modifiedAt,
+    )
+
+    fun toWithoutItems() = OrderWithoutItems(
+        customerId = customerId,
         id = id.value,
         status = status,
         createdAt = createdAt,
+        modifiedAt = modifiedAt,
     )
 }

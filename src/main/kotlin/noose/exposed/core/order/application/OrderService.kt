@@ -1,6 +1,7 @@
 package noose.exposed.core.order.application
 
 import noose.exposed.core.order.domain.Order
+import noose.exposed.core.order.domain.OrderItemQuery
 import noose.exposed.core.order.domain.OrderModifyCommand
 import noose.exposed.core.order.domain.OrderNotFoundException
 import noose.exposed.core.order.domain.OrderRepository
@@ -12,7 +13,7 @@ import java.util.UUID
 @Service
 class OrderService(
     private val orderRepository: OrderRepository,
-) : PlaceOrder, FindOrder, ModifyOrder, DeleteOrder {
+) : PlaceOrder, FindOrder, ChangeStatusOrder, DeleteOrder {
 
     override fun place(order: Order): UUID {
         orderRepository.save(order)
@@ -25,13 +26,18 @@ class OrderService(
             ?: throw OrderNotFoundException("Order with ID $id not found")
     }
 
+    fun itemsById(id: UUID): List<OrderItemQuery> {
+        return orderRepository.findOrderItems(id)
+    }
+
     @Transactional(readOnly = true)
     override fun all(): List<Order> {
         return orderRepository.findAll()
     }
 
-    override fun modify(id: UUID, command: OrderModifyCommand) {
-        val order = byId(id)
+    override fun change(id: UUID, command: OrderModifyCommand) {
+        val order = orderRepository.findWithoutItemsById(id)
+            ?: throw OrderNotFoundException("Order with ID $id not found")
         order.modify(command)
         orderRepository.update(order)
     }
