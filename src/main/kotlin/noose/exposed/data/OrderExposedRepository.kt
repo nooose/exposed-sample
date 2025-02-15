@@ -4,7 +4,7 @@ import noose.exposed.core.order.domain.Order
 import noose.exposed.core.order.domain.OrderItemQuery
 import noose.exposed.core.order.domain.OrderRepository
 import noose.exposed.core.order.domain.OrderWithoutItems
-import org.jetbrains.exposed.sql.selectAll
+import noose.exposed.data.OrderItems.orderId
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.stereotype.Repository
 import java.util.UUID
@@ -38,7 +38,7 @@ class OrderExposedRepository : OrderRepository {
 
     override fun findOrderItems(orderId: UUID): List<OrderItemQuery> {
         return (Orders innerJoin OrderItems)
-            .selectAll()
+            .select(Orders.id, OrderItems.productName)
             .where { OrderItems.orderId eq orderId }
             .map {
                 OrderItemQuery(
@@ -54,8 +54,22 @@ class OrderExposedRepository : OrderRepository {
     }
 
     override fun findAll(): List<Order> {
-        return OrderEntity.all()
-            .map { it.toOrder() }
+        val orders = OrderEntity.all()
+            .map { it.toWithoutItems() }
+        val orderIds = orders.map { it.id }
+        val orderItemMap = OrderItemEntity.find { orderId inList orderIds }
+            .groupBy { it.order.id.value }
+
+        return orders.map {
+            Order(
+                customerId = it.customerId,
+                id = it.id,
+                items = orderItemMap[it.id]?.map { it.toOrderItem() } ?: emptyList(),
+                status = it.status,
+                createdAt = it.createdAt,
+                modifiedAt = it.modifiedAt,
+            )
+        }
     }
 
     override fun update(order: OrderWithoutItems) {
@@ -64,7 +78,7 @@ class OrderExposedRepository : OrderRepository {
     }
 
     override fun delete(id: UUID) {
-        OrderItemEntity.find { OrderItems.orderId eq id }.forEach {
+        OrderItemEntity.find { orderId eq id }.forEach {
             it.delete()
         }
         OrderEntity.findById(id)?.delete()

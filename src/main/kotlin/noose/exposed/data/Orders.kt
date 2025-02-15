@@ -10,8 +10,8 @@ object Orders : UUIDTable(name = "orders", columnName = "id") {
     val customerId = long("customerId")
     val status = enumeration("status", OrderStatus::class)
         .default(OrderStatus.SHIPPED)
-    val createdAt = datetime("created_at").default(LocalDateTime.now())
-    val modifiedAt = datetime("modified_at").default(LocalDateTime.now())
+    val createdAt = datetime("created_at").clientDefault { LocalDateTime.now() }
+    val modifiedAt = datetime("modified_at").clientDefault { LocalDateTime.now() }
 }
 
 object OrderItems : LongIdTable(name = "order_items", columnName = "id") {

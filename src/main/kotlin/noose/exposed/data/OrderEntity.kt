@@ -22,7 +22,6 @@ class OrderEntity(id: EntityID<UUID>) : UUIDEntity(id) {
         this.modifiedAt = that.modifiedAt
     }
 
-    // N+1 문제 발생
     fun toOrder() = Order(
         customerId = customerId,
         id = id.value,
